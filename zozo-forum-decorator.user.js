@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ZOZO Forum Decorator
 // @namespace    https://github.com/El-Daro/zozo-forum-decorator
-// @version      0.2
+// @version      0.3
 // @description  Makes some utility fonts readable for the ZOZO forum.
 // @author       El Daro
 // @match        http*://forum.zozo.gg/*
