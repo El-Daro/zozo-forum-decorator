@@ -15,6 +15,6 @@
 //  'Deleted by' text (#334734)
 GM_addStyle (`
     .messageNotice.messageNotice--deleted {
-        color: #00ff00 !important;
+        color: #0000ff !important;
     }
 `);
