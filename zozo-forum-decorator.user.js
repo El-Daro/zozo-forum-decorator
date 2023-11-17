@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ZOZO Forum Decorator
 // @namespace    https://github.com/El-Daro/zozo-forum-decorator
-// @version      0.3
+// @version      0.4
 // @description  Makes some utility fonts readable for the ZOZO forum.
 // @author       El Daro
 // @match        http*://forum.zozo.gg/*
@@ -12,9 +12,9 @@
 // ==/UserScript==
 
 // CSS
-//  'Deleted by' text (#334734)
+//  'Deleted by' text
 GM_addStyle (`
     .messageNotice.messageNotice--deleted {
-        color: #0000ff !important;
+        color: #334734 !important;
     }
 `);
