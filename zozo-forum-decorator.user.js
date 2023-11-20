@@ -2,7 +2,7 @@
 // @name         ZOZO Forum Decorator
 // @namespace    https://github.com/El-Daro/zozo-forum-decorator
 // @version      1.1.0
-// @description  Makes some utility fonts readable for the ZOZO forum.
+// @description  Makes some utility fonts readable for ZOZO forum.
 // @author       El Daro
 // @match        http*://forum.zozo.gg/*
 // @grant        GM_addStyle
