@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ZOZO Forum Decorator
 // @namespace    https://github.com/El-Daro/zozo-forum-decorator
-// @version      1.1 Release
+// @version      1.1.0
 // @description  Makes some utility fonts readable for the ZOZO forum.
 // @author       El Daro
 // @match        http*://forum.zozo.gg/*
@@ -13,7 +13,6 @@
 
 //--------------------------------------------------------------------
 // CSS
-// TODO: define ZOZO colors (maybe)
 
 //----------------------------------
 //  Colors:
