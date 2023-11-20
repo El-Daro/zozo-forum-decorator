@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         ZOZO Forum Decorator
 // @namespace    https://github.com/El-Daro/zozo-forum-decorator
-// @version      1.0
+// @version      1.1 Release
 // @description  Makes some utility fonts readable for the ZOZO forum.
 // @author       El Daro
 // @match        http*://forum.zozo.gg/*
 // @grant        GM_addStyle
-// @run-at       document-start
+// @run-at       document-end
 // @updateURL    https://github.com/El-Daro/zozo-forum-decorator/raw/main/zozo-forum-decorator.user.js
 // @downloadURL  https://github.com/El-Daro/zozo-forum-decorator/raw/main/zozo-forum-decorator.user.js
 // ==/UserScript==
@@ -22,22 +22,6 @@
 //    #800000    | Maroon (dark red)
 //    #8C8C8C    | Light-grey
 //----------------------------------
-
-/*
-// Custom class for the deleted messages (general)
-GM_addStyle (`
-    .messageNotice.messageNotice--deleted {
-        color:    maroon !important;
-    }
-`);
-
-// Custom class for 'Reason:' part of the description for deleted messages
-GM_addStyle (`
-    .messageNotice--deletedReason {
-        color:    black !important;
-    }
-`);
-*/
 
 // Same as original, except changed the border-left-color to ZOZO style
 GM_addStyle (`
@@ -195,5 +179,7 @@ GM_addStyle (`
         document.addEventListener('DOMContentLoaded', func);
     }
 
-    ready(main);
+    // Use it, if for some reason decided to run at start (see @run-at)
+    //ready(main);
+    main();
 })();
