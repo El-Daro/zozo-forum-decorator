@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ZOZO Forum Decorator
 // @namespace    https://github.com/El-Daro/zozo-forum-decorator
-// @version      1.1.0
+// @version      1.1.1
 // @description  Makes some utility fonts readable for ZOZO forum.
 // @author       El Daro
 // @match        http*://forum.zozo.gg/*
@@ -69,8 +69,10 @@ GM_addStyle (`
         ["deletedby", "messageNotice--deletedHighlighted"]
     ]);
 
-    const DELETED_BY_TEMPLATE = "Deleted by|Удалил";
-    const DELETED_CONTAINER_STYLE = ".message--deleted";
+    const DELETED_BY_SIGNATURE = "Deleted by|Удалил";
+    const DELETED_POST_SIGNATURE = ".message--deleted";
+    const DELETED_PROFILE_POST_SIGNATURE = "div.message.message--simple.js-inlineModContainer .messageNotice--deleted";
+    const OBSERVED_BLOCK_SIGNATURE = "div.block-body.js-replyNewMessageContainer";
 
     //--------------------------------------------------
     // Functions
@@ -96,7 +98,7 @@ GM_addStyle (`
 
     // Special treatment for the 'Deleted by' line. Makes it red
     function colorizeDeletedBy(elements, addedClass) {
-        const regexDeletedBy = new RegExp(DELETED_BY_TEMPLATE);
+        const regexDeletedBy = new RegExp(DELETED_BY_SIGNATURE);
 
         for (const element of elements.values()) {
             for (const childNode of element.childNodes[1].childNodes) {
@@ -140,7 +142,7 @@ GM_addStyle (`
                     colorizeDeletedBy([newNode], HIGHLIGHT_MAP.get('deletedby')); // "messageNotice--deletedHighlighted");
                 }
                 // If it was the last element to observe, stop the observer
-                const container = document.querySelector(DELETED_CONTAINER_STYLE);
+                const container = document.querySelector(`${DELETED_POST_SIGNATURE}, ${DELETED_PROFILE_POST_SIGNATURE}`);
                 if (container == null) {
                     const observedNode = record.target;
                     console.log(`Observer stopped for <${observedNode.nodeName} class='${observedNode.className}'> at ${observedNode.baseURI}.`);
@@ -154,9 +156,9 @@ GM_addStyle (`
     function main() {
         restyle();
         // See if there are any deleted messages on the page
-        const deletedMessage = document.querySelector(DELETED_CONTAINER_STYLE);
-        if (deletedMessage !== null) {
-            const container = deletedMessage.parentNode;
+        const deletedPost = document.querySelector(`${DELETED_POST_SIGNATURE}, ${DELETED_PROFILE_POST_SIGNATURE}`);
+        if (deletedPost !== null) {
+            const container = document.querySelector(OBSERVED_BLOCK_SIGNATURE);
             const observerOptions = {
                 attributes: false,
                 childList: true,
