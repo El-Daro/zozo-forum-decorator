@@ -1,2 +1,3 @@
 # ZOZO Forum Decorator
-Makes some utility fonts readable for the ZOZO forum.
+
+Changes styling and makes some utility fonts readable for ZOZO forum.
