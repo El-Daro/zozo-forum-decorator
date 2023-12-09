@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         ZOZO Forum Decorator
 // @namespace    https://github.com/El-Daro/zozo-forum-decorator
-// @version      1.1.1
-// @description  Makes some utility fonts readable for ZOZO forum.
+// @version      1.2.0
+// @description  Improves user experience on ZOZO forum: makes some utility fonts readable, highlights links and so on.
 // @author       El Daro
 // @match        http*://forum.zozo.gg/*
 // @grant        GM_addStyle
@@ -11,54 +11,145 @@
 // @downloadURL  https://github.com/El-Daro/zozo-forum-decorator/raw/main/zozo-forum-decorator.user.js
 // ==/UserScript==
 
-//--------------------------------------------------------------------
-// CSS
+//-------------------------------------------------------------------------------------------------------------
+//                                                     CSS                                                    |
+//-------------------------------------------------------------------------------------------------------------
 
-//----------------------------------
-//  Colors:
+//-------------------------------------------------------------
+//                             COLORS                         |
+//-------------------------------------------------------------
+//    #010AC6    | Dark blue
+//    #115483    | Kinda blue
+//    #141414    | Basically black (default for text)
+//    #185886    | Kinda blue
+//    #2577B1    | Light blue (classic link color)
 //    #334734    | Slightly-greenish (ZOZO style color)
-//    #5a845a    | More greenish (ZOZO style color)
+//    #5A845A    | More greenish (ZOZO style color)
 //    #800000    | Maroon (dark red)
 //    #8C8C8C    | Light-grey
-//----------------------------------
+//    #EFF3EF    | Almost grey, but with a scent of green
+//-------------------------------------------------------------
 
-// Same as original, except changed the border-left-color to ZOZO style
+//-------------------------------------------------------------
+//                          VARIABLES                         |
+//-------------------------------------------------------------
+GM_addStyle (`
+    :root {
+        --text-color-default: #141414;
+        --text-color-grey: #8C8C8C;
+
+        --messageNotice-bkg-color: #EFF3EF;
+        --messageNotice-deletedBy-color: maroon;
+        --zozo-color-light: #5A845A;
+
+        --link-color-default: #2577B1;
+        --link-color-visited: #115483;
+        --link-color-hover: #185886;
+        --link-color-username: #010AC6;
+    }
+`);
+
+//-------------------------------------------------------------
+//                           CLASSES                          |
+//-------------------------------------------------------------
+
+//--------------------------------------
+// Approval queue
+//--------------------------------------
+
+// Additional info for moderators on the approval queue page and the icon on the left.
+// Same as original, except redefines the border-left-color to ZOZO style.
+// Note that this class is added to some elements later on through JS
 GM_addStyle (`
     .messageNotice.messageNotice--highlighted {
-        color: #141414;
-        background: #eff3ef;
-        border-left-color: #5a845a;
+        color: var(--text-color-default);
+        background: var(--messageNotice-bkg-color);
+        border-left-color: var(--zozo-color-light);
     }
-`)
 
-// Same as original, except changed the color to ZOZO style
-GM_addStyle (`
     .messageNotice.messageNotice--highlighted:before {
-        color: #5a845a !important;
+        color: var(--zozo-color-light) !important;
     }
 `);
 
-// Custom class for 'Deleted by' part of the description for deleted messages
+//--------------------------------------
+// Deleted posts (info for moderators)
+//--------------------------------------
+
+// Custom classes for 'Deleted by' part of the description for deleted messages and Date (after 'Deleted by')
 GM_addStyle (`
     .messageNotice--deletedHighlighted {
-        color:    maroon !important;
+        color: var(--messageNotice-deletedBy-color) !important;
     }
-`);
 
-// Date (after 'Deleted by')
-GM_addStyle (`
     .messageNotice--deleted .u-dt[title] {
-        color:    #8C8C8C !important;
+        color: var(--text-color-grey) !important;
     }
 `);
 
-//--------------------------------------------------------------------
-// JavaScript
+//--------------------------------------
+// Invisible text (miscellaneous)
+
+// Current page number
+GM_addStyle (`
+    .pageNav-page.pageNav-page--current {
+        color: inherit;
+    }
+`);
+
+//--------------------------------------
+// LINKS
+//--------------------------------------
+
+// User profile -> Latest activity | Recent content | About (Profile posts are covered by bbWrapper down below)
+GM_addStyle (`
+    .tabPanes.js-memberTabPanes [data-href$="/latest-activity"] .contentRow-title a:not(a.username),
+    .tabPanes.js-memberTabPanes [data-href$="/recent-content"] .contentRow-title a,
+    .tabPanes.js-memberTabPanes [data-href$="/about"] a {
+        color: var(--link-color-default) !important;
+    }
+`);
+
+// bbWrapper (covers most of the cases), Approval queue and Usernames mentioned in posts.
+// NOTE: The style for usernames DOES NOT have 'visited' and 'hover' counter-part, nor it should
+GM_addStyle (`
+    .bbWrapper a:not(.bbCodeBlock-sourceJump, .username),
+    .approvalQueue .pairs--columns a {
+        color: var(--link-color-default) !important;
+    }
+
+    .bbWrapper a.username {
+        color: var(--link-color-username) !important;
+    }
+`);
+
+// Visited: Standard (limited to most of the users' posts and messages) and Approval queue
+GM_addStyle (`
+    .bbWrapper a:not(.bbCodeBlock-sourceJump, .username):visited,
+    .approvalQueue .pairs--columns a:visited {
+        color: var(--link-color-visited) !important;
+    }
+`);
+
+// Hover: Standard (limited to most of the users' posts and messages) and Approval queue
+GM_addStyle (`
+    .bbWrapper a:not(.bbCodeBlock-sourceJump, .username):hover,
+    .approvalQueue .pairs--columns a:hover {
+        color: var(--link-color-hover) !important;
+    }
+`);
+
+
+//-------------------------------------------------------------------------------------------------------------
+//                                                  JavaScript                                                |
+//-------------------------------------------------------------------------------------------------------------
 
 (function() {
 
-    //--------------------------------------------------
-    // Definitions
+    //-------------------------------------------------------------
+    //                         DEFINITIONS                        |
+    //-------------------------------------------------------------
+    // A bunch of signatures that might be a subject to change in case of the forum engine update
     const UNREADABLE_MESSAGES_MAP = new Map([
         ["warnings", ".messageNotice--warning"],
         ["moderated", ".messageNotice--moderated"],
@@ -68,15 +159,41 @@ GM_addStyle (`
         ["normal", "messageNotice--highlighted"],
         ["deletedby", "messageNotice--deletedHighlighted"]
     ]);
+    const SELECTORS_MAP = new Map([
+        ["deletedBy", "Deleted by|Удалил"],
+        ["deletedPost", ".message--deleted"],
+        ["deletedProfilePost", "div.message.message--simple.js-inlineModContainer .messageNotice--deleted"],
+        ["deletedReply", `.message-responseRow .messageNotice--deleted:has(a[data-xf-click~="inserter"])`],
+        ["observedPosts", "div.block-body.js-replyNewMessageContainer"],
+        ["observedReplies", "div.message-responseRow:has(.messageNotice--deleted)"],
+        ["viewComments", "div.message-responseRow.u-jsOnly.js-commentLoader"]
+    ]);
+    const OBSERVERS_MAP = new Map([
+        ["posts", null],
+        ["replies", new Array()]
+    ]);
 
-    const DELETED_BY_SIGNATURE = "Deleted by|Удалил";
-    const DELETED_POST_SIGNATURE = ".message--deleted";
-    const DELETED_PROFILE_POST_SIGNATURE = "div.message.message--simple.js-inlineModContainer .messageNotice--deleted";
-    const OBSERVED_BLOCK_SIGNATURE = "div.block-body.js-replyNewMessageContainer";
+    // Counters
+    let OBSERVED_POSTS_COUNTER = 0;
+    let OBSERVED_REPLIES_COUNTER = 0;
 
-    //--------------------------------------------------
-    // Functions
 
+    //-------------------------------------------------------------
+    //                          FUNCTIONS                         |
+    //-------------------------------------------------------------
+    // LOGGING
+    //--------------------------------------
+    function logObservers() {
+        console.log(`Now watching...\n\t\tDeleted posts: ${OBSERVED_POSTS_COUNTER}\n\t\tDeleted replies: ${OBSERVED_REPLIES_COUNTER}`);
+    }
+
+    function logNewObserver(node) {
+        console.log(`Initiated an observer for <'${node.nodeName}' class='${node.className}'> at '${node.baseURI}'`);
+    }
+
+    //--------------------------------------
+    // RESTYLING
+    //--------------------------------------
     // Adds a class to all the elements with selected one (used to fix unreadable fonts)
     function addClassToClasses(selectedClass, addedClass) {
         const elements = document.querySelectorAll(selectedClass);
@@ -96,9 +213,9 @@ GM_addStyle (`
         }
     }
 
-    // Special treatment for the 'Deleted by' line. Makes it red
+    // Special treatment for the 'Deleted by' line. Paints it red
     function colorizeDeletedBy(elements, addedClass) {
-        const regexDeletedBy = new RegExp(DELETED_BY_SIGNATURE);
+        const regexDeletedBy = new RegExp(SELECTORS_MAP.get('deletedBy'));
 
         for (const element of elements.values()) {
             for (const childNode of element.childNodes[1].childNodes) {
@@ -120,9 +237,9 @@ GM_addStyle (`
 
     function highlightTextMap(elementsMap) {
         for (const elementsPair of elementsMap) {
-            addClassToElements(elementsPair[1], HIGHLIGHT_MAP.get('normal')); // "messageNotice--highlighted");
+            addClassToElements(elementsPair[1], HIGHLIGHT_MAP.get('normal'));
             if (elementsPair[0] == 'deleted') {
-                colorizeDeletedBy(elementsPair[1], HIGHLIGHT_MAP.get('deletedby')); // "messageNotice--deletedHighlighted");
+                colorizeDeletedBy(elementsPair[1], HIGHLIGHT_MAP.get('deletedby'));
             }
         }
     }
@@ -132,44 +249,130 @@ GM_addStyle (`
         highlightTextMap(elementsMap);
     }
 
-    // Observer function. Executes whenever the content we watch was changed (in this case, a deleted message expanded)
-    function processChanges(records, observer) {
+    //--------------------------------------
+    // OBSERVERS
+    //--------------------------------------
+    // Observer function. Executes whenever the content we watch was changed (in this case, a deleted post expanded)
+    //   Turns out expanding deleted posts (but not replies) happens in two stages: addition and removal.
+    //   Both fire separate events. Only the first one is processed
+    function processPostChanges(records, observer) {
         for (const record of records) {
-            if (record.type === 'childList') {
+            if (record.type === 'childList' && record.addedNodes.length > 0) {
                 for (const addedNode of record.addedNodes) {
-                    const newNode = addedNode.querySelector(UNREADABLE_MESSAGES_MAP.get('deleted'));
-                    addClassToElements([newNode], HIGHLIGHT_MAP.get('normal')); // "messageNotice--highlighted");
-                    colorizeDeletedBy([newNode], HIGHLIGHT_MAP.get('deletedby')); // "messageNotice--deletedHighlighted");
+                    const newNodes = addedNode.querySelectorAll(UNREADABLE_MESSAGES_MAP.get('deleted'));
+                    for (const node of newNodes) {
+                        addClassToElements([node], HIGHLIGHT_MAP.get('normal'));
+                        colorizeDeletedBy([node], HIGHLIGHT_MAP.get('deletedby'));
+                    }
+
+                    // See if there are deleted replies added to the DOM now
+                    const deletedReply = addedNode.querySelector(SELECTORS_MAP.get('deletedReply'));
+                    if (deletedReply !== null) {
+                        const observerOptions = {
+                            attributes: false,
+                            childList: true,
+                            subtree: false,
+                        };
+                        startRepliesObserver(addedNode, observerOptions);
+                    }
                 }
-                // If it was the last element to observe, stop the observer
-                const container = document.querySelector(`${DELETED_POST_SIGNATURE}, ${DELETED_PROFILE_POST_SIGNATURE}`);
-                if (container == null) {
+
+                // Consider using dynamic re-evaluation when a deletd post has been expanded. See if it is viable
+                //const container = observedNode.querySelector(`${SELECTORS_MAP.get('deletedPost')}, ${SELECTORS_MAP.get('deletedProfilePost')}`);
+                OBSERVED_POSTS_COUNTER--;
+                if (OBSERVED_POSTS_COUNTER == 0) {
                     const observedNode = record.target;
                     console.log(`Observer stopped for <${observedNode.nodeName} class='${observedNode.className}'> at ${observedNode.baseURI}.`);
-                    console.log(`No more deleted messages to expand.`);
                     observer.disconnect();
                 }
+                logObservers();
             }
         }
     }
 
+    // It is similar to the function above, but the behaviour is different. Keep in mind that each reply has its own observer, unlike posts
+    function processReplyChanges(records, observer) {
+        for (const record of records) {
+            if (record.type === 'childList' && record.addedNodes.length > 0) {
+                for (const addedNode of record.addedNodes) {
+                    if (addedNode.nodeType != 3) {
+                        const newNode = addedNode.querySelector(UNREADABLE_MESSAGES_MAP.get('deleted'));
+                        if (newNode !== null) {
+                            addClassToElements([newNode], HIGHLIGHT_MAP.get('normal'));
+                            colorizeDeletedBy([newNode], HIGHLIGHT_MAP.get('deletedby'));
+                        }
+                    }
+                }
+
+                // record.target is the node being observed
+                console.log(`An observer stopped for <${record.target.nodeName} class='${record.target.className}'> at ${record.target.baseURI}.`);
+                OBSERVED_REPLIES_COUNTER--;
+                if (OBSERVED_REPLIES_COUNTER == 0) {
+                    // Closes all of the running reply observers
+                    // Just a precaution. Better to miscount the observers and close them prematurely than to let them running indefinitely
+                    for (observer of OBSERVERS_MAP.get("replies")) {
+                        observer.disconnect();
+                    }
+                }
+                logObservers();
+                observer.disconnect();
+            }
+        }
+    }
+
+    function startPostsObserver(element, observerOptions) {
+        const container = element.querySelector(`${SELECTORS_MAP.get('observedPosts')}:has(${SELECTORS_MAP.get('deletedPost')}, ${SELECTORS_MAP.get('deletedProfilePost')})`);
+        const deletedPosts = element.querySelectorAll(`${SELECTORS_MAP.get('deletedPost')}, ${SELECTORS_MAP.get('deletedProfilePost')}`);
+        OBSERVED_POSTS_COUNTER = deletedPosts.length;
+        // Start an observer that will detect changes to the DOM (a deleted reply being expanded)
+        if (container !== null) {
+            OBSERVERS_MAP.set("posts", new MutationObserver(processPostChanges));
+            OBSERVERS_MAP.get("posts").observe(container, observerOptions);
+            logNewObserver(container);
+        }
+    }
+
+    function startRepliesObserver(element, observerOptions) {
+        const containers = element.querySelectorAll(SELECTORS_MAP.get('observedReplies'));
+        const expandableComments = element.querySelectorAll(SELECTORS_MAP.get('viewComments'));
+        // Start observers that will detect changes to the DOM (a deleted reply being expanded)
+        // Unfortunately, each deleted reply to a post needs its own observer:
+        //   They are wrapped inside its own element and don't share an immediate parent
+        if (containers.length > 0) {
+            for (const container of containers) {
+                OBSERVED_REPLIES_COUNTER++;
+                OBSERVERS_MAP.get("replies").push(new MutationObserver(processReplyChanges));
+                OBSERVERS_MAP.get("replies")[OBSERVED_REPLIES_COUNTER-1].observe(container, observerOptions);
+                logNewObserver(container);
+            }
+        }
+
+        // The `View previous comments` button may also reveal new deleted replies if pressed, so we assign an observer to each of it, too
+        if (expandableComments.length > 0) {
+            console.log(`Expendable comment blocks: ${expandableComments.length}`);
+            for (const node of expandableComments) {
+                const commentBlock = node.parentNode;
+                OBSERVED_REPLIES_COUNTER++;
+                OBSERVERS_MAP.get("replies").push(new MutationObserver(processReplyChanges));
+                OBSERVERS_MAP.get("replies")[OBSERVED_REPLIES_COUNTER-1].observe(commentBlock, observerOptions);
+                logNewObserver(commentBlock);
+            }
+        }
+    }
+
+    //--------------------------------------
+    // MAIN
+    //--------------------------------------
     function main() {
         restyle();
-        // See if there are any deleted messages on the page
-        const deletedPost = document.querySelector(`${DELETED_POST_SIGNATURE}, ${DELETED_PROFILE_POST_SIGNATURE}`);
-        if (deletedPost !== null) {
-            const container = document.querySelector(OBSERVED_BLOCK_SIGNATURE);
-            const observerOptions = {
-                attributes: false,
-                childList: true,
-                subtree: false,
-            };
-            // Start an observer that will detect changes to the DOM (a deleted message being expanded).
-            const observer = new MutationObserver(processChanges);
-            observer.observe(container, observerOptions);
-
-            console.log(`Initiated an observer for <'${container.nodeName}' class='${container.className}'> at '${container.baseURI}'`);
-        }
+        const observerOptions = {
+            attributes: false,
+            childList: true,
+            subtree: false,
+        };
+        startPostsObserver(document, observerOptions);
+        startRepliesObserver(document, observerOptions);
+        logObservers();
     }
 
     function ready(func) {
