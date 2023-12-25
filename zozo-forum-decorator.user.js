@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ZOZO Forum Decorator
 // @namespace    https://github.com/El-Daro/zozo-forum-decorator
-// @version      1.2.0
+// @version      1.2.1
 // @description  Improves user experience on ZOZO forum: makes some utility fonts readable, highlights links and so on.
 // @author       El Daro
 // @match        http*://forum.zozo.gg/*
@@ -94,6 +94,13 @@ GM_addStyle (`
 GM_addStyle (`
     .pageNav-page.pageNav-page--current {
         color: inherit;
+    }
+`);
+
+// 'Report' label
+GM_addStyle (`
+    .label.label--accent {
+        color: var(--text-color-default) !important;
     }
 `);
 
