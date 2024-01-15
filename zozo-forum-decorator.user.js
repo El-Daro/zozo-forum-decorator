@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ZOZO Forum Decorator
 // @namespace    https://github.com/El-Daro/zozo-forum-decorator
-// @version      1.2.1
+// @version      1.2.2
 // @description  Improves user experience on ZOZO forum: makes some utility fonts readable, highlights links and so on.
 // @author       El Daro
 // @match        http*://forum.zozo.gg/*
@@ -100,6 +100,17 @@ GM_addStyle (`
 // 'Report' label
 GM_addStyle (`
     .label.label--accent {
+        color: var(--text-color-default) !important;
+    }
+`);
+
+//--------------------------------------
+// NOTIFICATIONS
+//--------------------------------------
+
+// Warning notification for when you are trying to delete a message(s) that will cause the whole thread to be deleted as well
+GM_addStyle (`
+    div.formInfoRow .blockMessage.blockMessage--important {
         color: var(--text-color-default) !important;
     }
 `);
